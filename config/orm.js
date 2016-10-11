@@ -1,53 +1,84 @@
-var connection = require('./connection.js');
+/*
+Here is the O.R.M. where you write functions that takes inputs and conditions and turn them into database commands like SQL.
+*/
+var connection = require('../config/connection.js');
 
-// ORM 
-// =============================================================
+function printQuestionMarks(num) {
+	var arr = [];
 
-var tableName = "burgers";
-
-var orm = {
-
-	// Here our ORM is creating a simple method for performing a query of the entire table.
-	// We make use of the callback to ensure that data is returned only once the query is done.
-	selectALL: function(tableName, callback){
-		var s = 'SELECT * FROM ' + tableName;
-
-		connection.query(s, function(err, result) {
-	 
-            callback(result);
-
-        });
-	},
-
-	// Here our ORM is creating a simple method for performing a query of a single character in the table.
-	// Again, we make use of the callback to grab a specific character from the database. 
-
-	updateOne: function(burger, devoured, callback){
-		var s = 'UPDATE quotes SET burger_name = ?, WHERE id = ?';
-
-		connection.query(s, [req.body.burger_name, req.body.devoured, req.params.id], function (err, result) {
-			if (err) throw err;
-			callback(result);
-		});
-
-	},
-
-	// Here our ORM is creating a simple method for adding characters to the database
-	// Effectively, the ORM's simple addCharacter method translates into a more complex SQL INSERT statement. 
-
-	insertOne: function(tableName, burger, callback){
-
-		var s = "INSERT INTO " + tableName + " (burger_name) VALUES (?)";
-
-		connection.query(s,[burger], function(err, result) {
-            
-            callback(result);
-
-        });
-
+	for (var i = 0; i < num; i++) {
+		arr.push('?');
 	}
 
+	return arr.toString();
+}
 
+function objToSql(ob) {
+	// column1=value, column2=value2,...
+	var arr = [];
+
+	for (var key in ob) {
+		if (ob.hasOwnProperty(key)) {
+			arr.push(key + '=' + ob[key]);
+		}
+	}
+
+	return arr.toString();
+}
+
+var orm = {
+	all: function (tableInput, cb) {
+		var queryString = 'SELECT * FROM ' + tableInput + ';';
+		connection.query(queryString, function (err, result) {
+			if (err) throw err;
+			cb(result);
+		});
+	},
+		// vals is an array of values that we want to save to cols
+		// cols are the columns we want to insert the values into
+	create: function (table, cols, vals, cb) {
+		var queryString = 'INSERT INTO ' + table;
+
+		queryString = queryString + ' (';
+		queryString = queryString + cols.toString();
+		queryString = queryString + ') ';
+		queryString = queryString + 'VALUES (';
+		queryString = queryString + printQuestionMarks(vals.length);
+		queryString = queryString + ') ';
+
+		console.log(queryString);
+
+		connection.query(queryString, vals, function (err, result) {
+			if (err) throw err;
+			cb(result);
+		});
+	},
+		// objColVals would be the columns and values that you want to update
+		// an example of objColVals would be {name: panther, sleepy: true}
+	update: function (table, objColVals, condition, cb) {
+		var queryString = 'UPDATE ' + table;
+
+		queryString = queryString + ' SET ';
+		queryString = queryString + objToSql(objColVals);
+		queryString = queryString + ' WHERE ';
+		queryString = queryString + condition;
+
+		console.log(queryString);
+		connection.query(queryString, function (err, result) {
+			if (err) throw err;
+			cb(result);
+		});
+	},
+	delete: function (table, condition, cb) {
+		var queryString = 'DELETE FROM ' + table;
+		queryString = queryString + ' WHERE ';
+		queryString = queryString + condition;
+
+		connection.query(queryString, function (err, result) {
+			if (err) throw err;
+			cb(result);
+		});
+	}
 };
 
 module.exports = orm;

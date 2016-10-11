@@ -1,32 +1,44 @@
+/*
+Here is where you create all the functions that will do the routing for your app, and the logic of each route.
+*/
 var express = require('express');
 var router = express.Router();
 var burger = require('../models/burger.js');
 
 router.get('/', function (req, res) {
-    //console.log("req = "+req);
-    res.redirect('/burger');
+	res.redirect('/burgers');
 });
 
-router.get('/burger', function (req, res) {
-    selectAll(function (data) {
-        var hbsObject = { burger: data };
-        //console.log(hbsObject);
-        res.render('index', hbsObject);
-    });
+router.get('/burgers', function (req, res) {
+	burger.all(function (data) {
+		var hbsObject = { burgers: data };
+		console.log(hbsObject);
+		res.render('index', hbsObject);
+	});
 });
 
-router.put('/burger/eaten/:id', function(req, res){
-    var burgerID = 'id = ' + req.params.id;
-    //console.log("/burger/eaten burgerID = "+ burgerID);
-    burger.update({ devoured: req.body.devoured}, burgerID, function(){
-        res.redirect('/burger');
-    });
-
+router.post('/burgers/create', function (req, res) {
+	burger.create(['burger_name', 'devoured'], [req.body.name, req.body.devoured], function () {
+		res.redirect('/burgers');
+	});
 });
 
-router.post('/burger/create', function (req, res) {
-    burger.create(['burgerName', 'devoured'], [req.body.name, false], function () {
-        res.redirect('/burger');
-    });
+router.put('/burgers/update/:id', function (req, res) {
+	var condition = 'id = ' + req.params.id;
+
+	console.log('condition', condition);
+
+	burger.update({ devoured: req.body.devoured }, condition, function () {
+		res.redirect('/burgers');
+	});
 });
+
+router.delete('/burgers/delete/:id', function (req, res) {
+	var condition = 'id = ' + req.params.id;
+
+	burger.delete(condition, function () {
+		res.redirect('/burgers');
+	});
+});
+
 module.exports = router;
